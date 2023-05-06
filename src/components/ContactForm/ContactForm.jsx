@@ -1,13 +1,18 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { nanoid } from 'nanoid';
+import { useSelector, useDispatch } from 'react-redux';
+import { Report } from 'notiflix/build/notiflix-report-aio';
 import { BsPersonAdd } from 'react-icons/bs';
+
+import { getContacts } from 'redux/selectors';
+import { addContact } from 'redux/contactsSlice';
 
 import { Form, Label, Input, Button } from './ContactForm.styled';
 
-export const ContactForm = ({ onSubmit }) => {
+export const ContactForm = () => {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const contacts = useSelector(getContacts);
+  const dispatch = useDispatch();
 
   const formReset = () => {
     setName('');
@@ -30,13 +35,23 @@ export const ContactForm = ({ onSubmit }) => {
 
   const submitHandler = e => {
     e.preventDefault();
-    const { name, number } = e.currentTarget.elements;
-    const newContact = {
-      id: nanoid(),
-      name: name.value,
-      number: number.value,
-    };
-    onSubmit(newContact);
+    const {
+      name: { value: name },
+      number: { value: number },
+    } = e.currentTarget.elements;
+
+    const isExists = contacts.some(
+      contact => contact.name.toLowerCase() === name.toLowerCase()
+    );
+    if (isExists) {
+      return Report.info(
+        'Enter correct information',
+        `${name} is already in contacts`,
+        'Ok'
+      );
+    }
+    dispatch(addContact({ name, number }));
+
     formReset();
   };
 
@@ -75,8 +90,4 @@ export const ContactForm = ({ onSubmit }) => {
       </Form>
     </>
   );
-};
-
-ContactForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
 };
